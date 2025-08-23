@@ -3,20 +3,13 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, Text, Card, Divider } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { getPricesByDate, savePrices } from '../db';
+import { getTodayDate } from '../utils/date';
 
 const PriceEntryScreen = ({ navigation }) => {
   const [gold24k, setGold24k] = useState('');
   const [silver, setSilver] = useState('');
   const [selectedKarat, setSelectedKarat] = useState('24K');
   const [calculatedPrice, setCalculatedPrice] = useState('');
-
-  const getTodayDate = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
   useEffect(() => {
     const loadPrices = async () => {

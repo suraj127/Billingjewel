@@ -7,6 +7,7 @@ import { getPricesByDate, saveInvoice, getSetting } from '../db';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
 import { shareAsync } from 'expo-sharing';
 import InvoiceItemForm from './components/InvoiceItemForm';
+import { getTodayDate } from '../utils/date';
 
 const CreateInvoiceScreen = ({ navigation }) => {
   // State for the overall invoice
@@ -21,7 +22,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
   // Fetch initial data
   useEffect(() => {
     const loadData = async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayDate();
       try {
         const rates = await getPricesByDate(today);
         if (!rates) {
@@ -53,7 +54,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
     const invoiceData = {
       customerName: customerName, mobile: mobile,
-      date: new Date().toISOString().slice(0, 10), totalAmount: finalPayable,
+      date: getTodayDate(), totalAmount: finalPayable,
     };
     try {
       const invoiceId = await saveInvoice(invoiceData, invoiceItems);
