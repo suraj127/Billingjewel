@@ -26,16 +26,18 @@ const InvoiceHeader = React.memo(({
   </>
 ));
 
-const InvoiceFooter = React.memo(({ itemsCount, onGenerate, onPrint, styles }) => {
+const InvoiceFooter = React.memo(({
+  itemsCount, onGenerate, onPrint, isProcessing, styles,
+}) => {
   if (itemsCount === 0) return null;
   return (
     <Card style={styles.card}>
       <Card.Actions style={styles.footerActions}>
-        <Button mode="outlined" onPress={onPrint} icon="printer" style={{ marginRight: 10 }}>
-          Print
+        <Button mode="outlined" onPress={onPrint} icon="printer" style={{ marginRight: 10 }} disabled={isProcessing}>
+          {isProcessing ? 'Printing...' : 'Print'}
         </Button>
-        <Button mode="contained" onPress={onGenerate} icon="share-variant">
-          Share PDF
+        <Button mode="contained" onPress={onGenerate} icon="share-variant" disabled={isProcessing}>
+          {isProcessing ? 'Sharing...' : 'Share PDF'}
         </Button>
       </Card.Actions>
     </Card>
@@ -59,6 +61,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [invoiceItems, setInvoiceItems] = useState([]);
   const [dailyRates, setDailyRates] = useState(null);
   const [storeName, setStoreName] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,10 +88,12 @@ const CreateInvoiceScreen = ({ navigation }) => {
   }, []);
 
   const handleGenerateInvoice = useCallback(async () => {
+    if (isProcessing) return;
     if (invoiceItems.length === 0) {
       Alert.alert('No Items', 'Please add at least one item.');
       return;
     }
+    setIsProcessing(true);
     const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
@@ -118,8 +123,10 @@ const CreateInvoiceScreen = ({ navigation }) => {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to save or generate invoice.');
+    } finally {
+      setIsProcessing(false);
     }
-  }, [invoiceItems, customerName, mobile, storeName]);
+  }, [invoiceItems, customerName, mobile, storeName, isProcessing]);
 
   const renderItem = useCallback(({ item }) => <InvoiceItem item={item} styles={styles} />, []);
 
@@ -130,15 +137,16 @@ const CreateInvoiceScreen = ({ navigation }) => {
   />;
 
   const handlePrintInvoice = useCallback(async () => {
+    if (isProcessing) return;
     if (invoiceItems.length === 0) {
       Alert.alert('No Items', 'Please add at least one item to print.');
       return;
     }
+    setIsProcessing(true);
     const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
 
-    // Note: We don't have an invoice ID before saving, so we use a placeholder.
     const pdfDetails = {
       invoiceNumber: 'N/A (Rough Bill)',
       date: new Date().toISOString().slice(0, 10),
@@ -156,10 +164,12 @@ const CreateInvoiceScreen = ({ navigation }) => {
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to open print dialog.');
+    } finally {
+      setIsProcessing(false);
     }
-  }, [invoiceItems, customerName, storeName]);
+  }, [invoiceItems, customerName, storeName, isProcessing]);
 
-  const footer = <InvoiceFooter itemsCount={invoiceItems.length} onGenerate={handleGenerateInvoice} onPrint={handlePrintInvoice} styles={styles} />;
+  const footer = <InvoiceFooter itemsCount={invoiceItems.length} onGenerate={handleGenerateInvoice} onPrint={handlePrintInvoice} isProcessing={isProcessing} styles={styles} />;
 
   return (
     <FlatList
