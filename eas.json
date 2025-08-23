@@ -10,7 +10,10 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {},
+    "android": {
+      "extends": "production"
+    }
   },
   "submit": {
     "production": {}
