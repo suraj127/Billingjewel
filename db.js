@@ -1,6 +1,6 @@
-import * as SQLite from 'expo-sqlite';
+import { openDatabase } from 'expo-sqlite';
 
-const db = SQLite.openDatabase('jewelry.db');
+const db = openDatabase('jewelry.db');
 
 export const init = () => {
   const promise = new Promise((resolve, reject) => {
