@@ -4,8 +4,9 @@ import {
   TextInput, Button, Text, Card,
 } from 'react-native-paper';
 import { getPricesByDate, saveInvoice, getSetting } from '../db';
-import { generateInvoicePdf } from '../utils/pdfGenerator';
+import { generateInvoicePdf, generateInvoiceHtml } from '../utils/pdfGenerator';
 import { shareAsync } from 'expo-sharing';
+import * as Print from 'expo-print';
 import InvoiceItemForm from './components/InvoiceItemForm';
 
 const InvoiceHeader = React.memo(({
@@ -25,13 +26,16 @@ const InvoiceHeader = React.memo(({
   </>
 ));
 
-const InvoiceFooter = React.memo(({ itemsCount, onGenerate, styles }) => {
+const InvoiceFooter = React.memo(({ itemsCount, onGenerate, onPrint, styles }) => {
   if (itemsCount === 0) return null;
   return (
     <Card style={styles.card}>
       <Card.Actions style={styles.footerActions}>
-        <Button mode="contained" onPress={onGenerate} icon="file-document">
-          Generate Invoice
+        <Button mode="outlined" onPress={onPrint} icon="printer" style={{ marginRight: 10 }}>
+          Print
+        </Button>
+        <Button mode="contained" onPress={onGenerate} icon="share-variant">
+          Share PDF
         </Button>
       </Card.Actions>
     </Card>
@@ -125,7 +129,37 @@ const CreateInvoiceScreen = ({ navigation }) => {
     dailyRates={dailyRates} onAddItem={handleAddItem} styles={styles}
   />;
 
-  const footer = <InvoiceFooter itemsCount={invoiceItems.length} onGenerate={handleGenerateInvoice} styles={styles} />;
+  const handlePrintInvoice = useCallback(async () => {
+    if (invoiceItems.length === 0) {
+      Alert.alert('No Items', 'Please add at least one item to print.');
+      return;
+    }
+    const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
+    const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
+    const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
+
+    // Note: We don't have an invoice ID before saving, so we use a placeholder.
+    const pdfDetails = {
+      invoiceNumber: 'N/A (Rough Bill)',
+      date: new Date().toISOString().slice(0, 10),
+      customerName,
+      items: invoiceItems,
+      storeName,
+      subtotal,
+      totalDiscount,
+      finalPayable,
+    };
+
+    try {
+      const html = generateInvoiceHtml(pdfDetails);
+      await Print.printAsync({ html });
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to open print dialog.');
+    }
+  }, [invoiceItems, customerName, storeName]);
+
+  const footer = <InvoiceFooter itemsCount={invoiceItems.length} onGenerate={handleGenerateInvoice} onPrint={handlePrintInvoice} styles={styles} />;
 
   return (
     <FlatList
