@@ -10,7 +10,22 @@
     "preview": {
       "distribution": "internal"
     },
+<<<<<<< Updated upstream
     "production": {}
+=======
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "distribution": "store"
+    },
+    "android": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    }
+>>>>>>> Stashed changes
   },
   "submit": {
     "production": {}
