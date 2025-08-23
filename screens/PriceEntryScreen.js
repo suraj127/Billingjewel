@@ -110,6 +110,14 @@ const PriceEntryScreen = ({ navigation }) => {
       ) : null}
 
       <Button title="Save Prices" onPress={savePrices} />
+
+      <View style={styles.separator} />
+
+      <Button
+        title="Create New Invoice"
+        onPress={() => navigation.navigate('CreateInvoice')}
+        color="#28a745"
+      />
     </View>
   );
 };
@@ -152,6 +160,11 @@ const styles = StyleSheet.create({
     color: 'green',
     textAlign: 'center',
     marginBottom: 20,
+  },
+  separator: {
+    marginVertical: 15,
+    borderBottomColor: '#737373',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });
 
