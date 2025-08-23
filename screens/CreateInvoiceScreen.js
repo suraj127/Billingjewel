@@ -10,7 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { getPricesByDate } from '../db';
+import { getPricesByDate, saveInvoice, getSetting } from '../db';
+import { generateInvoicePdf } from '../utils/pdfGenerator';
+import { shareAsync } from 'expo-sharing';
 
 // Helper to parse purity string to a percentage
 const getPurityPercentage = (purity) => {
@@ -33,6 +35,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [mobile, setMobile] = useState('');
   const [invoiceItems, setInvoiceItems] = useState([]);
   const [dailyRates, setDailyRates] = useState(null);
+  const [storeName, setStoreName] = useState('');
 
   // Current item form state
   const [selectedMetal, setSelectedMetal] = useState('Gold');
@@ -51,24 +54,27 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [total, setTotal] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
 
+  // Fetch initial data
   useEffect(() => {
-    const loadRates = async () => {
+    const loadData = async () => {
       const today = new Date().toISOString().slice(0, 10);
       try {
         const rates = await getPricesByDate(today);
-        if (rates) {
-          setDailyRates(rates);
-        } else {
+        if (!rates) {
           Alert.alert('Rates Not Set', 'Please set today\'s gold and silver rates first.', [
             { text: 'OK', onPress: () => navigation.goBack() },
           ]);
         }
+        setDailyRates(rates);
+
+        const name = await getSetting('storeName');
+        setStoreName(name || 'My Store');
       } catch (error) {
         console.error(error);
-        Alert.alert('Error', 'Failed to load daily rates.');
+        Alert.alert('Error', 'Failed to load initial data.');
       }
     };
-    loadRates();
+    loadData();
   }, [navigation]);
 
   // --- CALCULATION LOGIC ---
@@ -140,11 +146,48 @@ const CreateInvoiceScreen = ({ navigation }) => {
       finalTotal: finalTotal,
     };
     setInvoiceItems(prevItems => [...prevItems, newItem]);
-    // Reset form
     setItemName('');
     setGrossWeight('');
     setMakingChargeValue('');
     setDiscountValue('');
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (invoiceItems.length === 0) {
+      Alert.alert('No Items', 'Please add at least one item to the invoice.');
+      return;
+    }
+    const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
+    const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
+    const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
+    const invoiceData = {
+      customerName: customerName,
+      mobile: mobile,
+      date: new Date().toISOString().slice(0, 10),
+      totalAmount: finalPayable,
+    };
+    try {
+      const invoiceId = await saveInvoice(invoiceData, invoiceItems);
+      const pdfDetails = {
+        invoiceNumber: invoiceId,
+        date: invoiceData.date,
+        customerName: customerName,
+        items: invoiceItems,
+        storeName: storeName,
+        subtotal: subtotal,
+        totalDiscount: totalDiscount,
+        finalPayable: finalPayable,
+      };
+      const pdfUri = await generateInvoicePdf(pdfDetails);
+      if (pdfUri) {
+        await shareAsync(pdfUri, { dialogTitle: 'Share Invoice PDF' });
+      } else {
+        Alert.alert('Error', 'Failed to create PDF file.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to save or generate invoice.');
+    }
   };
 
   return (
@@ -210,6 +253,10 @@ const CreateInvoiceScreen = ({ navigation }) => {
           )}
           ListEmptyComponent={<Text style={{textAlign: 'center', padding: 10}}>No items added yet.</Text>}
         />
+      </View>
+
+      <View style={styles.section}>
+        <Button title="Generate Invoice" onPress={handleGenerateInvoice} color="green" />
       </View>
     </ScrollView>
   );

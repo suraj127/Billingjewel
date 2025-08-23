@@ -2397,6 +2397,16 @@ expo-modules-core@2.5.0:
   dependencies:
     invariant "^2.2.4"
 
+expo-print@^14.1.4:
+  version "14.1.4"
+  resolved "https://registry.npmjs.org/expo-print/-/expo-print-14.1.4.tgz"
+  integrity sha512-qcXdvgwtjgFxX92pd3vdZXZRiFAMysVrCJWrPQvZOSw9OjxeczTOUjcAXRdAC2qFki8Gq/eCnKozSxYN5QCFxw==
+
+expo-sharing@^13.1.5:
+  version "13.1.5"
+  resolved "https://registry.npmjs.org/expo-sharing/-/expo-sharing-13.1.5.tgz"
+  integrity sha512-X/5sAEiWXL2kdoGE3NO5KmbfcmaCWuWVZXHu8OQef7Yig4ZgHFkGD11HKJ5KqDrDg+SRZe4ISd6MxE7vGUgm4w==
+
 expo-sqlite@^15.2.14:
   version "15.2.14"
   resolved "https://registry.npmjs.org/expo-sqlite/-/expo-sqlite-15.2.14.tgz"
