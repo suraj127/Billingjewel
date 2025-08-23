@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
+import { TextInput, Button, Text } from 'react-native-paper';
 import { saveSettings } from '../db';
 
 const SetupScreen = ({ navigation }) => {
@@ -23,22 +24,31 @@ const SetupScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Store Setup</Text>
+      <Text variant="headlineLarge" style={styles.title}>Store Setup</Text>
       <TextInput
-        style={styles.input}
-        placeholder="Store Name"
+        label="Store Name"
         value={storeName}
         onChangeText={setStoreName}
+        style={styles.input}
+        mode="outlined"
       />
       <TextInput
-        style={styles.input}
-        placeholder="PIN"
+        label="PIN"
         value={pin}
         onChangeText={setPin}
+        style={styles.input}
         keyboardType="numeric"
         secureTextEntry
+        mode="outlined"
       />
-      <Button title="Save" onPress={handleSave} />
+      <Button
+        mode="contained"
+        onPress={handleSave}
+        style={styles.button}
+        icon="content-save"
+      >
+        Save and Continue
+      </Button>
     </View>
   );
 };
@@ -47,20 +57,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   title: {
-    fontSize: 24,
+    textAlign: 'center',
     marginBottom: 20,
   },
   input: {
-    width: '100%',
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
     marginBottom: 20,
-    paddingHorizontal: 10,
+  },
+  button: {
+    marginTop: 10,
   },
 });
 

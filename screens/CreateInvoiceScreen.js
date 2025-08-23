@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  FlatList,
-  Alert,
-} from 'react-native';
+  TextInput, Button, Text, Card, Divider,
+} from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { getPricesByDate, saveInvoice, getSetting } from '../db';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
 import { shareAsync } from 'expo-sharing';
 
-// Helper to parse purity string to a percentage
 const getPurityPercentage = (purity) => {
   if (!purity) return 0;
   if (purity.includes('K')) {
@@ -29,7 +23,6 @@ const getPurityPercentage = (purity) => {
 };
 
 const CreateInvoiceScreen = ({ navigation }) => {
-  // All state remains the same
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [invoiceItems, setInvoiceItems] = useState([]);
@@ -49,14 +42,13 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [total, setTotal] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
 
-  // All useEffects and handlers remain the same
   useEffect(() => {
     const loadData = async () => {
       const today = new Date().toISOString().slice(0, 10);
       try {
         const rates = await getPricesByDate(today);
         if (!rates) {
-          Alert.alert('Rates Not Set', 'Please set today\'s gold and silver rates first.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+          Alert.alert('Rates Not Set', 'Please set today\'s rates first.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
         }
         setDailyRates(rates);
         const name = await getSetting('storeName');
@@ -112,10 +104,10 @@ const CreateInvoiceScreen = ({ navigation }) => {
       return;
     }
     const newItem = {
-      id: Date.now().toString(),
-      metal: selectedMetal, name: itemName, grossWeight: parseFloat(grossWeight),
-      purity: purity, netWeight: netWeight, metalValue: metalValue,
-      makingCharge: mcValue, total: total, discount: total - finalTotal, finalTotal: finalTotal,
+      id: Date.now().toString(), metal: selectedMetal, name: itemName,
+      grossWeight: parseFloat(grossWeight), purity: purity, netWeight: netWeight,
+      metalValue: metalValue, makingCharge: mcValue, total: total,
+      discount: total - finalTotal, finalTotal: finalTotal,
     };
     setInvoiceItems(prevItems => [...prevItems, newItem]);
     setItemName(''); setGrossWeight(''); setMakingChargeValue(''); setDiscountValue('');
@@ -123,8 +115,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
 
   const handleGenerateInvoice = async () => {
     if (invoiceItems.length === 0) {
-      Alert.alert('No Items', 'Please add at least one item to the invoice.');
-      return;
+      Alert.alert('No Items', 'Please add at least one item.'); return;
     }
     const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
@@ -152,55 +143,66 @@ const CreateInvoiceScreen = ({ navigation }) => {
 
   const renderHeader = () => (
     <>
-      <Text style={styles.title}>Create New Invoice</Text>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Customer Details</Text>
-        <TextInput style={styles.input} placeholder="Customer Name" value={customerName} onChangeText={setCustomerName} />
-        <TextInput style={styles.input} placeholder="Mobile (Optional)" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" />
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Add Product</Text>
-        <Picker selectedValue={selectedMetal} onValueChange={(v) => setSelectedMetal(v)}>
-          <Picker.Item label="Gold" value="Gold" />
-          <Picker.Item label="Silver" value="Silver" />
-        </Picker>
-        <TextInput style={styles.input} placeholder="Item Name (e.g., Ring, Chain)" value={itemName} onChangeText={setItemName} />
-        <TextInput style={styles.input} placeholder="Gross Weight (gm)" value={grossWeight} onChangeText={setGrossWeight} keyboardType="numeric" />
-        <Picker selectedValue={purity} onValueChange={(v) => setPurity(v)}>
-          <Picker.Item label="24K" value="24K" /><Picker.Item label="22K" value="22K" />
-          <Picker.Item label="18K" value="18K" /><Picker.Item label="14K" value="14K" />
-          <Picker.Item label="92.5%" value="92.5%" />
-        </Picker>
-        <Text style={styles.calcText}>Net Weight: {netWeight.toFixed(3)} gm</Text>
-        <Text style={styles.calcText}>Metal Value: ₹{metalValue.toFixed(2)}</Text>
-        <View style={styles.row}>
-          <Picker style={{ flex: 1 }} selectedValue={makingChargeBasis} onValueChange={(v) => setMakingChargeBasis(v)}>
-            <Picker.Item label="% Basis" value="Percent" /><Picker.Item label="Per Gram" value="PerGram" />
-            <Picker.Item label="Per Piece" value="PerPiece" />
-          </Picker>
-          <TextInput style={[styles.input, { flex: 1 }]} placeholder="MC Value" value={makingChargeValue} onChangeText={setMakingChargeValue} keyboardType="numeric" />
-        </View>
-        <Text style={styles.calcText}>Making Charge: ₹{mcValue.toFixed(2)}</Text>
-        <Text style={styles.totalText}>Total: ₹{total.toFixed(2)}</Text>
-        <View style={styles.row}>
-          <Picker style={{ flex: 1 }} selectedValue={discountType} onValueChange={(v) => setDiscountType(v)}>
-            <Picker.Item label="Discount %" value="Percent" /><Picker.Item label="Discount Flat" value="Flat" />
-          </Picker>
-          <TextInput style={[styles.input, { flex: 1 }]} placeholder="Discount" value={discountValue} onChangeText={setDiscountValue} keyboardType="numeric" />
-        </View>
-        <Text style={styles.finalTotalText}>Final Total: ₹{finalTotal.toFixed(2)}</Text>
-        <Button title="Add Item to Invoice" onPress={handleAddItem} />
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Invoice Items</Text>
-      </View>
+      <Text variant="headlineLarge" style={styles.title}>Create New Invoice</Text>
+      <Card style={styles.card}>
+        <Card.Title title="Customer Details" titleVariant="titleLarge" />
+        <Card.Content>
+          <TextInput label="Customer Name" value={customerName} onChangeText={setCustomerName} mode="outlined" style={styles.input} />
+          <TextInput label="Mobile (Optional)" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" mode="outlined" style={styles.input} />
+        </Card.Content>
+      </Card>
+      <Card style={styles.card}>
+        <Card.Title title="Add Product" titleVariant="titleLarge" />
+        <Card.Content>
+          <View style={styles.pickerContainer}><Picker selectedValue={selectedMetal} onValueChange={(v) => setSelectedMetal(v)}>
+            <Picker.Item label="Gold" value="Gold" /><Picker.Item label="Silver" value="Silver" />
+          </Picker></View>
+          <TextInput label="Item Name (e.g., Ring, Chain)" value={itemName} onChangeText={setItemName} mode="outlined" style={styles.input} />
+          <TextInput label="Gross Weight (gm)" value={grossWeight} onChangeText={setGrossWeight} keyboardType="numeric" mode="outlined" style={styles.input} />
+          <View style={styles.pickerContainer}><Picker selectedValue={purity} onValueChange={(v) => setPurity(v)}>
+            <Picker.Item label="24K" value="24K" /><Picker.Item label="22K" value="22K" />
+            <Picker.Item label="18K" value="18K" /><Picker.Item label="14K" value="14K" />
+            <Picker.Item label="92.5%" value="92.5%" />
+          </Picker></View>
+          <Text style={styles.calcText}>Net Weight: {netWeight.toFixed(3)} gm</Text>
+          <Text style={styles.calcText}>Metal Value: ₹{metalValue.toFixed(2)}</Text>
+          <Divider style={styles.divider} />
+          <View style={styles.row}>
+            <Picker style={{ flex: 1 }} selectedValue={makingChargeBasis} onValueChange={(v) => setMakingChargeBasis(v)}>
+              <Picker.Item label="% Basis" value="Percent" /><Picker.Item label="Per Gram" value="PerGram" />
+              <Picker.Item label="Per Piece" value="PerPiece" />
+            </Picker>
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="MC Value" value={makingChargeValue} onChangeText={setMakingChargeValue} keyboardType="numeric" mode="outlined" />
+          </View>
+          <Text style={styles.calcText}>Making Charge: ₹{mcValue.toFixed(2)}</Text>
+          <Text style={styles.totalText}>Total: ₹{total.toFixed(2)}</Text>
+          <Divider style={styles.divider} />
+          <View style={styles.row}>
+            <Picker style={{ flex: 1 }} selectedValue={discountType} onValueChange={(v) => setDiscountType(v)}>
+              <Picker.Item label="Discount %" value="Percent" /><Picker.Item label="Discount Flat" value="Flat" />
+            </Picker>
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Discount" value={discountValue} onChangeText={setDiscountValue} keyboardType="numeric" mode="outlined" />
+          </View>
+          <Text style={styles.finalTotalText}>Final Total: ₹{finalTotal.toFixed(2)}</Text>
+        </Card.Content>
+        <Card.Actions>
+          <Button mode="contained" onPress={handleAddItem} icon="plus-circle">Add Item</Button>
+        </Card.Actions>
+      </Card>
+      <Text variant="headlineSmall" style={styles.listHeader}>Invoice Items</Text>
     </>
   );
 
   const renderFooter = () => (
-    <View style={styles.section}>
-      <Button title="Generate Invoice" onPress={handleGenerateInvoice} color="green" />
-    </View>
+    invoiceItems.length > 0 ? (
+      <Card style={styles.card}>
+        <Card.Actions style={styles.footerActions}>
+          <Button mode="contained" onPress={handleGenerateInvoice} icon="file-document">
+            Generate Invoice
+          </Button>
+        </Card.Actions>
+      </Card>
+    ) : null
   );
 
   return (
@@ -209,33 +211,38 @@ const CreateInvoiceScreen = ({ navigation }) => {
       data={invoiceItems}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <View style={styles.item}>
-          <Text style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
-          <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
-          <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
-          <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
-        </View>
+        <Card style={styles.itemCard}>
+          <Card.Content>
+            <Text variant="titleMedium" style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
+            <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
+            <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
+            <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
+          </Card.Content>
+        </Card>
       )}
       ListHeaderComponent={renderHeader}
       ListFooterComponent={renderFooter}
-      ListEmptyComponent={<Text style={{textAlign: 'center', padding: 10}}>No items added yet.</Text>}
+      ListEmptyComponent={<Card style={styles.card}><Card.Content><Text style={{textAlign: 'center'}}>No items added yet.</Text></Card.Content></Card>}
     />
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginVertical: 10 },
-  section: { marginBottom: 20, padding: 10, borderColor: '#ccc', borderWidth: 1, borderRadius: 5 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10, paddingHorizontal: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  calcText: { fontSize: 16, marginVertical: 2, color: '#333' },
-  totalText: { fontSize: 18, fontWeight: 'bold', marginVertical: 8, color: 'blue' },
-  finalTotalText: { fontSize: 20, fontWeight: 'bold', color: 'green', textAlign: 'center', marginVertical: 8 },
-  item: { padding: 10, borderBottomColor: '#eee', borderBottomWidth: 1, backgroundColor: '#f9f9f9', marginBottom: 5, borderRadius: 5 },
-  itemTitle: { fontWeight: 'bold', fontSize: 16 },
-  itemTotal: { fontWeight: 'bold', color: 'navy', marginTop: 5 },
+  container: { flex: 1, padding: 10, backgroundColor: '#f5f5f5' },
+  card: { marginBottom: 20, },
+  title: { textAlign: 'center', marginVertical: 10, },
+  listHeader: { textAlign: 'center', marginVertical: 10, },
+  input: { marginBottom: 10, },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', },
+  pickerContainer: { borderColor: 'gray', borderWidth: 1, borderRadius: 5, marginBottom: 10, },
+  calcText: { fontSize: 16, marginVertical: 4, },
+  totalText: { fontSize: 18, fontWeight: 'bold', marginVertical: 8, },
+  finalTotalText: { fontSize: 20, fontWeight: 'bold', color: 'green', textAlign: 'center', marginVertical: 8, },
+  itemCard: { marginVertical: 5, },
+  itemTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5, },
+  itemTotal: { fontWeight: 'bold', color: 'navy', marginTop: 5, fontSize: 16, },
+  divider: { marginVertical: 10, },
+  footerActions: { justifyContent: 'center', paddingVertical: 10, },
 });
 
 export default CreateInvoiceScreen;

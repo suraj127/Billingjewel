@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
+import { TextInput, Button, Text, Card, Divider } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { getPricesByDate, savePrices } from '../db';
 
@@ -9,16 +10,14 @@ const PriceEntryScreen = ({ navigation }) => {
   const [selectedKarat, setSelectedKarat] = useState('24K');
   const [calculatedPrice, setCalculatedPrice] = useState('');
 
-  // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
     const today = new Date();
     const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // Fetch prices when the component mounts
   useEffect(() => {
     const loadPrices = async () => {
       try {
@@ -36,7 +35,6 @@ const PriceEntryScreen = ({ navigation }) => {
     loadPrices();
   }, []);
 
-  // Calculate price when gold rate or karat changes
   useEffect(() => {
     if (gold24k && selectedKarat) {
       const g24k = parseFloat(gold24k);
@@ -69,55 +67,61 @@ const PriceEntryScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter Daily Prices</Text>
+      <Card>
+        <Card.Content>
+          <Text variant="headlineLarge" style={styles.title}>Enter Daily Prices</Text>
 
-      <Text style={styles.label}>Gold 24K Rate (per gm)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Gold 24K Rate"
-        value={gold24k}
-        onChangeText={setGold24k}
-        keyboardType="numeric"
-      />
+          <TextInput
+            label="Gold 24K Rate (per gm)"
+            value={gold24k}
+            onChangeText={setGold24k}
+            style={styles.input}
+            keyboardType="numeric"
+            mode="outlined"
+          />
+          <TextInput
+            label="Silver Rate (per gm)"
+            value={silver}
+            onChangeText={setSilver}
+            style={styles.input}
+            keyboardType="numeric"
+            mode="outlined"
+          />
 
-      <Text style={styles.label}>Silver Rate (per gm)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Silver Rate"
-        value={silver}
-        onChangeText={setSilver}
-        keyboardType="numeric"
-      />
+          <Text variant="titleMedium" style={styles.label}>Select Gold Karat</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedKarat}
+              onValueChange={(itemValue) => setSelectedKarat(itemValue)}
+            >
+              <Picker.Item label="24K" value="24K" />
+              <Picker.Item label="22K" value="22K" />
+              <Picker.Item label="18K" value="18K" />
+              <Picker.Item label="14K" value="14K" />
+            </Picker>
+          </View>
 
-      <Text style={styles.label}>Select Gold Karat</Text>
-      <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={selectedKarat}
-          onValueChange={(itemValue, itemIndex) => setSelectedKarat(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="24K" value="24K" />
-          <Picker.Item label="22K" value="22K" />
-          <Picker.Item label="18K" value="18K" />
-          <Picker.Item label="14K" value="14K" />
-        </Picker>
-      </View>
+          {calculatedPrice ? (
+            <Text variant="bodyLarge" style={styles.calculatedPrice}>
+              Calculated Rate for {selectedKarat}: ₹{calculatedPrice} /gm
+            </Text>
+          ) : null}
 
-      {calculatedPrice ? (
-        <Text style={styles.calculatedPrice}>
-          Calculated Rate for {selectedKarat}: ₹{calculatedPrice} /gm
-        </Text>
-      ) : null}
+        </Card.Content>
+        <Card.Actions>
+          <Button mode="contained" onPress={handleSavePrices} icon="content-save">Save Prices</Button>
+        </Card.Actions>
+      </Card>
 
-      <Button title="Save Prices" onPress={handleSavePrices} />
-
-      <View style={styles.separator} />
+      <Divider style={styles.divider} />
 
       <Button
-        title="Create New Invoice"
+        mode="elevated"
         onPress={() => navigation.navigate('CreateInvoice')}
-        color="#28a745"
-      />
+        icon="plus-circle"
+      >
+        Create New Invoice
+      </Button>
     </View>
   );
 };
@@ -125,47 +129,34 @@ const PriceEntryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
+    backgroundColor: '#f5f5f5',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 20,
   },
   input: {
-    width: '100%',
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
+    marginBottom: 15,
+  },
+  label: {
+    marginBottom: 5,
+    marginLeft: 5
   },
   pickerContainer: {
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 20,
-  },
-  picker: {
-    width: '100%',
-    height: 50,
+    borderRadius: 5,
+    marginBottom: 15,
   },
   calculatedPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'green',
     textAlign: 'center',
-    marginBottom: 20,
+    marginVertical: 10,
+    fontWeight: 'bold',
   },
-  separator: {
-    marginVertical: 15,
-    borderBottomColor: '#737373',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  divider: {
+    marginVertical: 20,
+  }
 });
 
 export default PriceEntryScreen;
