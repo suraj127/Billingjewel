@@ -4,20 +4,7 @@ import {
   TextInput, Button, Text, Card, Divider,
 } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
-
-const getPurityPercentage = (purity) => {
-  if (!purity) return 0;
-  if (purity.includes('K')) {
-    const karat = parseInt(purity.replace('K', ''));
-    return isNaN(karat) ? 0 : karat / 24;
-  }
-  if (purity.includes('%')) {
-    const percent = parseFloat(purity.replace('%', ''));
-    return isNaN(percent) ? 0 : percent / 100;
-  }
-  const asFloat = parseFloat(purity);
-  return isNaN(asFloat) ? 0 : asFloat / 100;
-};
+import { getPurityPercentage } from '../../utils/calculations';
 
 const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
   const [selectedMetal, setSelectedMetal] = useState('Gold');
@@ -30,6 +17,7 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
   const [discountValue, setDiscountValue] = useState('');
   const [netWeight, setNetWeight] = useState(0);
   const [metalValue, setMetalValue] = useState(0);
+  const [displayRate, setDisplayRate] = useState(0);
   const [mcValue, setMcValue] = useState(0);
   const [total, setTotal] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
@@ -41,14 +29,22 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
   }, [grossWeight, purity]);
 
   useEffect(() => {
-    if (dailyRates && netWeight > 0) {
+    if (dailyRates && grossWeight) {
+      const gw = parseFloat(grossWeight) || 0;
+      const purityPercent = getPurityPercentage(purity);
       const baseRate = selectedMetal === 'Gold' ? dailyRates.gold_24k_price : dailyRates.silver_price;
-      const itemRate = selectedMetal === 'Gold' ? baseRate : baseRate / getPurityPercentage('92.5%');
-      setMetalValue(netWeight * itemRate);
+
+      const currentNetWeight = gw * purityPercent;
+      setNetWeight(currentNetWeight);
+
+      setMetalValue(currentNetWeight * baseRate);
+      setDisplayRate(baseRate * purityPercent);
     } else {
+      setNetWeight(0);
       setMetalValue(0);
+      setDisplayRate(0);
     }
-  }, [netWeight, selectedMetal, dailyRates]);
+  }, [grossWeight, purity, selectedMetal, dailyRates]);
 
   useEffect(() => {
     const mcInput = parseFloat(makingChargeValue);
@@ -80,7 +76,7 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
       id: Date.now().toString(), metal: selectedMetal, name: itemName,
       grossWeight: parseFloat(grossWeight), purity: purity, netWeight: netWeight,
       metalValue: metalValue, makingCharge: mcValue, total: total,
-      discount: total - finalTotal, finalTotal: finalTotal,
+      discount: total - finalTotal, finalTotal: finalTotal, displayRate: displayRate,
     };
     onAddItem(newItem); // Pass the new item to the parent
     // Reset form

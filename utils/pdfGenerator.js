@@ -18,7 +18,7 @@ export const generateInvoiceHtml = (invoiceDetails) => {
       <td>${item.metal}</td>
       <td>${item.purity}</td>
       <td>${item.grossWeight.toFixed(3)}</td>
-      <td>₹${(item.metalValue > 0 && item.netWeight > 0) ? (item.metalValue / item.netWeight).toFixed(2) : 'N/A'}</td>
+      <td>₹${(item.displayRate || 0).toFixed(2)}</td>
       <td>₹${item.makingCharge.toFixed(2)}</td>
       <td>₹${item.discount.toFixed(2)}</td>
       <td>₹${item.finalTotal.toFixed(2)}</td>
