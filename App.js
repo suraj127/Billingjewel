@@ -6,6 +6,7 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { init, getSetting } from './db';
 import SetupScreen from './screens/SetupScreen';
 import LoginScreen from './screens/LoginScreen';
+import PriceEntryScreen from './screens/PriceEntryScreen';
 
 const Stack = createStackNavigator();
 
@@ -47,6 +48,7 @@ export default function App() {
       <Stack.Navigator initialRouteName={initialRoute}>
         <Stack.Screen name="Setup" component={SetupScreen} options={{ title: 'Setup' }} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
+        <Stack.Screen name="PriceEntry" component={PriceEntryScreen} options={{ title: 'Daily Prices' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

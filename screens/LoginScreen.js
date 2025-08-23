@@ -9,9 +9,7 @@ const LoginScreen = ({ navigation }) => {
     try {
       const storedPin = await getSetting('pin');
       if (pin === storedPin) {
-        // For now, just show an alert. Later, navigate to the main app screen.
-        Alert.alert('Success', 'Login successful!');
-        // navigation.replace('Main');
+        navigation.replace('PriceEntry');
       } else {
         Alert.alert('Error', 'Invalid PIN.');
       }
