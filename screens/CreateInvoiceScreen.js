@@ -8,17 +8,54 @@ import { generateInvoicePdf } from '../utils/pdfGenerator';
 import { shareAsync } from 'expo-sharing';
 import InvoiceItemForm from './components/InvoiceItemForm';
 
+const InvoiceHeader = React.memo(({
+  customerName, setCustomerName, mobile, setMobile, dailyRates, onAddItem, styles,
+}) => (
+  <>
+    <Text variant="headlineLarge" style={styles.title}>Create New Invoice</Text>
+    <Card style={styles.card}>
+      <Card.Title title="Customer Details" titleVariant="titleLarge" />
+      <Card.Content>
+        <TextInput label="Customer Name" value={customerName} onChangeText={setCustomerName} mode="outlined" style={styles.input} />
+        <TextInput label="Mobile (Optional)" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" mode="outlined" style={styles.input} />
+      </Card.Content>
+    </Card>
+    <InvoiceItemForm dailyRates={dailyRates} onAddItem={onAddItem} />
+    <Text variant="headlineSmall" style={styles.listHeader}>Invoice Items</Text>
+  </>
+));
+
+const InvoiceFooter = React.memo(({ itemsCount, onGenerate, styles }) => {
+  if (itemsCount === 0) return null;
+  return (
+    <Card style={styles.card}>
+      <Card.Actions style={styles.footerActions}>
+        <Button mode="contained" onPress={onGenerate} icon="file-document">
+          Generate Invoice
+        </Button>
+      </Card.Actions>
+    </Card>
+  );
+});
+
+const InvoiceItem = React.memo(({ item, styles }) => (
+  <Card style={styles.itemCard}>
+    <Card.Content>
+      <Text variant="titleMedium" style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
+      <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
+      <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
+      <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
+    </Card.Content>
+  </Card>
+));
+
 const CreateInvoiceScreen = ({ navigation }) => {
-  // State for the overall invoice
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [invoiceItems, setInvoiceItems] = useState([]);
-
-  // Data fetched from DB
   const [dailyRates, setDailyRates] = useState(null);
   const [storeName, setStoreName] = useState('');
 
-  // Fetch initial data
   useEffect(() => {
     const loadData = async () => {
       const today = new Date().toISOString().slice(0, 10);
@@ -26,9 +63,9 @@ const CreateInvoiceScreen = ({ navigation }) => {
         const rates = await getPricesByDate(today);
         if (!rates) {
           Alert.alert('Rates Not Set', 'Please set today\'s rates first.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+          return;
         }
         setDailyRates(rates);
-
         const name = await getSetting('storeName');
         setStoreName(name || 'My Store');
       } catch (error) {
@@ -39,87 +76,66 @@ const CreateInvoiceScreen = ({ navigation }) => {
     loadData();
   }, [navigation]);
 
-  // Callback for the memoized form component
   const handleAddItem = useCallback((newItem) => {
     setInvoiceItems(prevItems => [...prevItems, newItem]);
   }, []);
 
-  const handleGenerateInvoice = async () => {
+  const handleGenerateInvoice = useCallback(async () => {
     if (invoiceItems.length === 0) {
-      Alert.alert('No Items', 'Please add at least one item.'); return;
+      Alert.alert('No Items', 'Please add at least one item.');
+      return;
     }
     const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
     const invoiceData = {
-      customerName: customerName, mobile: mobile,
-      date: new Date().toISOString().slice(0, 10), totalAmount: finalPayable,
+      customerName, mobile,
+      date: new Date().toISOString().slice(0, 10),
+      totalAmount: finalPayable,
     };
     try {
       const invoiceId = await saveInvoice(invoiceData, invoiceItems);
       const pdfDetails = {
-        invoiceNumber: invoiceId, date: invoiceData.date, customerName: customerName,
-        items: invoiceItems, storeName: storeName, subtotal: subtotal,
-        totalDiscount: totalDiscount, finalPayable: finalPayable,
+        invoiceNumber: invoiceId,
+        date: invoiceData.date,
+        customerName,
+        items: invoiceItems,
+        storeName,
+        subtotal,
+        totalDiscount,
+        finalPayable,
       };
       const pdfUri = await generateInvoicePdf(pdfDetails);
       if (pdfUri) {
         await shareAsync(pdfUri, { dialogTitle: 'Share Invoice PDF' });
-      } else { Alert.alert('Error', 'Failed to create PDF file.'); }
+      } else {
+        Alert.alert('Error', 'Failed to create PDF file.');
+      }
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to save or generate invoice.');
     }
-  };
+  }, [invoiceItems, customerName, mobile, storeName]);
 
-  const renderHeader = () => (
-    <>
-      <Text variant="headlineLarge" style={styles.title}>Create New Invoice</Text>
-      <Card style={styles.card}>
-        <Card.Title title="Customer Details" titleVariant="titleLarge" />
-        <Card.Content>
-          <TextInput label="Customer Name" value={customerName} onChangeText={setCustomerName} mode="outlined" style={styles.input} />
-          <TextInput label="Mobile (Optional)" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" mode="outlined" style={styles.input} />
-        </Card.Content>
-      </Card>
+  const renderItem = useCallback(({ item }) => <InvoiceItem item={item} styles={styles} />, []);
 
-      {/* Render the memoized form component */}
-      <InvoiceItemForm dailyRates={dailyRates} onAddItem={handleAddItem} />
+  const header = <InvoiceHeader
+    customerName={customerName} setCustomerName={setCustomerName}
+    mobile={mobile} setMobile={setMobile}
+    dailyRates={dailyRates} onAddItem={handleAddItem} styles={styles}
+  />;
 
-      <Text variant="headlineSmall" style={styles.listHeader}>Invoice Items</Text>
-    </>
-  );
-
-  const renderFooter = () => (
-    invoiceItems.length > 0 ? (
-      <Card style={styles.card}>
-        <Card.Actions style={styles.footerActions}>
-          <Button mode="contained" onPress={handleGenerateInvoice} icon="file-document">
-            Generate Invoice
-          </Button>
-        </Card.Actions>
-      </Card>
-    ) : null
-  );
+  const footer = <InvoiceFooter itemsCount={invoiceItems.length} onGenerate={handleGenerateInvoice} styles={styles} />;
 
   return (
     <FlatList
       style={styles.container}
       data={invoiceItems}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <Card style={styles.itemCard}>
-          <Card.Content>
-            <Text variant="titleMedium" style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
-            <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
-            <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
-            <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
-          </Card.Content>
-        </Card>
-      )}
-      ListHeaderComponent={renderHeader}
-      ListFooterComponent={renderFooter}
-      ListEmptyComponent={<Card style={styles.card}><Card.Content><Text style={{textAlign: 'center'}}>No items added yet.</Text></Card.Content></Card>}
+      renderItem={renderItem}
+      ListHeaderComponent={header}
+      ListFooterComponent={footer}
+      ListEmptyComponent={<Card style={styles.card}><Card.Content><Text style={{ textAlign: 'center' }}>No items added yet.</Text></Card.Content></Card>}
     />
   );
 };
