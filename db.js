@@ -64,7 +64,7 @@ export const saveInvoice = async (invoice, items) => {
 
     for (const item of items) {
       await db.runAsync(
-        'INSERT INTO invoice_items (invoice_id, item_name, metal, purity, weight, rate, mc, discount, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO invoice_items (invoice_id, item_name, metal, purity, weight, rate, mc, discount, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         invoiceId,
         item.name,
         item.metal,

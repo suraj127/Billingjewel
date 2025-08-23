@@ -5,7 +5,6 @@ import {
   TextInput,
   Button,
   StyleSheet,
-  ScrollView,
   FlatList,
   Alert,
 } from 'react-native';
@@ -30,14 +29,12 @@ const getPurityPercentage = (purity) => {
 };
 
 const CreateInvoiceScreen = ({ navigation }) => {
-  // Invoice level state
+  // All state remains the same
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [invoiceItems, setInvoiceItems] = useState([]);
   const [dailyRates, setDailyRates] = useState(null);
   const [storeName, setStoreName] = useState('');
-
-  // Current item form state
   const [selectedMetal, setSelectedMetal] = useState('Gold');
   const [itemName, setItemName] = useState('');
   const [grossWeight, setGrossWeight] = useState('');
@@ -46,27 +43,22 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [makingChargeValue, setMakingChargeValue] = useState('');
   const [discountType, setDiscountType] = useState('Percent');
   const [discountValue, setDiscountValue] = useState('');
-
-  // Calculated values for the current item
   const [netWeight, setNetWeight] = useState(0);
   const [metalValue, setMetalValue] = useState(0);
   const [mcValue, setMcValue] = useState(0);
   const [total, setTotal] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
 
-  // Fetch initial data
+  // All useEffects and handlers remain the same
   useEffect(() => {
     const loadData = async () => {
       const today = new Date().toISOString().slice(0, 10);
       try {
         const rates = await getPricesByDate(today);
         if (!rates) {
-          Alert.alert('Rates Not Set', 'Please set today\'s gold and silver rates first.', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-          ]);
+          Alert.alert('Rates Not Set', 'Please set today\'s gold and silver rates first.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
         }
         setDailyRates(rates);
-
         const name = await getSetting('storeName');
         setStoreName(name || 'My Store');
       } catch (error) {
@@ -77,7 +69,6 @@ const CreateInvoiceScreen = ({ navigation }) => {
     loadData();
   }, [navigation]);
 
-  // --- CALCULATION LOGIC ---
   useEffect(() => {
     const gw = parseFloat(grossWeight);
     const purityPercent = getPurityPercentage(purity);
@@ -96,35 +87,23 @@ const CreateInvoiceScreen = ({ navigation }) => {
 
   useEffect(() => {
     const mcInput = parseFloat(makingChargeValue);
-    if (isNaN(mcInput)) {
-      setMcValue(0);
-      return;
-    }
+    if (isNaN(mcInput)) { setMcValue(0); return; }
     if (makingChargeBasis === 'Percent') {
       setMcValue(metalValue * (mcInput / 100));
     } else if (makingChargeBasis === 'PerGram') {
       const gw = parseFloat(grossWeight) || 0;
       setMcValue(gw * mcInput);
-    } else {
-      setMcValue(mcInput);
-    }
+    } else { setMcValue(mcInput); }
   }, [makingChargeBasis, makingChargeValue, metalValue, grossWeight]);
 
-  useEffect(() => {
-    setTotal(metalValue + mcValue);
-  }, [metalValue, mcValue]);
+  useEffect(() => { setTotal(metalValue + mcValue); }, [metalValue, mcValue]);
 
   useEffect(() => {
     const discountInput = parseFloat(discountValue);
-    if (isNaN(discountInput)) {
-      setFinalTotal(total);
-      return;
-    }
+    if (isNaN(discountInput)) { setFinalTotal(total); return; }
     if (discountType === 'Percent') {
       setFinalTotal(total - total * (discountInput / 100));
-    } else {
-      setFinalTotal(total - discountInput);
-    }
+    } else { setFinalTotal(total - discountInput); }
   }, [total, discountType, discountValue]);
 
   const handleAddItem = () => {
@@ -134,22 +113,12 @@ const CreateInvoiceScreen = ({ navigation }) => {
     }
     const newItem = {
       id: Date.now().toString(),
-      metal: selectedMetal,
-      name: itemName,
-      grossWeight: parseFloat(grossWeight),
-      purity: purity,
-      netWeight: netWeight,
-      metalValue: metalValue,
-      makingCharge: mcValue,
-      total: total,
-      discount: total - finalTotal,
-      finalTotal: finalTotal,
+      metal: selectedMetal, name: itemName, grossWeight: parseFloat(grossWeight),
+      purity: purity, netWeight: netWeight, metalValue: metalValue,
+      makingCharge: mcValue, total: total, discount: total - finalTotal, finalTotal: finalTotal,
     };
     setInvoiceItems(prevItems => [...prevItems, newItem]);
-    setItemName('');
-    setGrossWeight('');
-    setMakingChargeValue('');
-    setDiscountValue('');
+    setItemName(''); setGrossWeight(''); setMakingChargeValue(''); setDiscountValue('');
   };
 
   const handleGenerateInvoice = async () => {
@@ -161,45 +130,34 @@ const CreateInvoiceScreen = ({ navigation }) => {
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
     const invoiceData = {
-      customerName: customerName,
-      mobile: mobile,
-      date: new Date().toISOString().slice(0, 10),
-      totalAmount: finalPayable,
+      customerName: customerName, mobile: mobile,
+      date: new Date().toISOString().slice(0, 10), totalAmount: finalPayable,
     };
     try {
       const invoiceId = await saveInvoice(invoiceData, invoiceItems);
       const pdfDetails = {
-        invoiceNumber: invoiceId,
-        date: invoiceData.date,
-        customerName: customerName,
-        items: invoiceItems,
-        storeName: storeName,
-        subtotal: subtotal,
-        totalDiscount: totalDiscount,
-        finalPayable: finalPayable,
+        invoiceNumber: invoiceId, date: invoiceData.date, customerName: customerName,
+        items: invoiceItems, storeName: storeName, subtotal: subtotal,
+        totalDiscount: totalDiscount, finalPayable: finalPayable,
       };
       const pdfUri = await generateInvoicePdf(pdfDetails);
       if (pdfUri) {
         await shareAsync(pdfUri, { dialogTitle: 'Share Invoice PDF' });
-      } else {
-        Alert.alert('Error', 'Failed to create PDF file.');
-      }
+      } else { Alert.alert('Error', 'Failed to create PDF file.'); }
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to save or generate invoice.');
     }
   };
 
-  return (
-    <ScrollView style={styles.container}>
+  const renderHeader = () => (
+    <>
       <Text style={styles.title}>Create New Invoice</Text>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Customer Details</Text>
         <TextInput style={styles.input} placeholder="Customer Name" value={customerName} onChangeText={setCustomerName} />
         <TextInput style={styles.input} placeholder="Mobile (Optional)" value={mobile} onChangeText={setMobile} keyboardType="phone-pad" />
       </View>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Add Product</Text>
         <Picker selectedValue={selectedMetal} onValueChange={(v) => setSelectedMetal(v)}>
@@ -209,18 +167,15 @@ const CreateInvoiceScreen = ({ navigation }) => {
         <TextInput style={styles.input} placeholder="Item Name (e.g., Ring, Chain)" value={itemName} onChangeText={setItemName} />
         <TextInput style={styles.input} placeholder="Gross Weight (gm)" value={grossWeight} onChangeText={setGrossWeight} keyboardType="numeric" />
         <Picker selectedValue={purity} onValueChange={(v) => setPurity(v)}>
-          <Picker.Item label="24K" value="24K" />
-          <Picker.Item label="22K" value="22K" />
-          <Picker.Item label="18K" value="18K" />
-          <Picker.Item label="14K" value="14K" />
+          <Picker.Item label="24K" value="24K" /><Picker.Item label="22K" value="22K" />
+          <Picker.Item label="18K" value="18K" /><Picker.Item label="14K" value="14K" />
           <Picker.Item label="92.5%" value="92.5%" />
         </Picker>
         <Text style={styles.calcText}>Net Weight: {netWeight.toFixed(3)} gm</Text>
         <Text style={styles.calcText}>Metal Value: ₹{metalValue.toFixed(2)}</Text>
         <View style={styles.row}>
           <Picker style={{ flex: 1 }} selectedValue={makingChargeBasis} onValueChange={(v) => setMakingChargeBasis(v)}>
-            <Picker.Item label="% Basis" value="Percent" />
-            <Picker.Item label="Per Gram" value="PerGram" />
+            <Picker.Item label="% Basis" value="Percent" /><Picker.Item label="Per Gram" value="PerGram" />
             <Picker.Item label="Per Piece" value="PerPiece" />
           </Picker>
           <TextInput style={[styles.input, { flex: 1 }]} placeholder="MC Value" value={makingChargeValue} onChangeText={setMakingChargeValue} keyboardType="numeric" />
@@ -229,36 +184,42 @@ const CreateInvoiceScreen = ({ navigation }) => {
         <Text style={styles.totalText}>Total: ₹{total.toFixed(2)}</Text>
         <View style={styles.row}>
           <Picker style={{ flex: 1 }} selectedValue={discountType} onValueChange={(v) => setDiscountType(v)}>
-            <Picker.Item label="Discount %" value="Percent" />
-            <Picker.Item label="Discount Flat" value="Flat" />
+            <Picker.Item label="Discount %" value="Percent" /><Picker.Item label="Discount Flat" value="Flat" />
           </Picker>
           <TextInput style={[styles.input, { flex: 1 }]} placeholder="Discount" value={discountValue} onChangeText={setDiscountValue} keyboardType="numeric" />
         </View>
         <Text style={styles.finalTotalText}>Final Total: ₹{finalTotal.toFixed(2)}</Text>
         <Button title="Add Item to Invoice" onPress={handleAddItem} />
       </View>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Invoice Items</Text>
-        <FlatList
-          data={invoiceItems}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Text style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
-              <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
-              <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
-              <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
-            </View>
-          )}
-          ListEmptyComponent={<Text style={{textAlign: 'center', padding: 10}}>No items added yet.</Text>}
-        />
       </View>
+    </>
+  );
 
-      <View style={styles.section}>
-        <Button title="Generate Invoice" onPress={handleGenerateInvoice} color="green" />
-      </View>
-    </ScrollView>
+  const renderFooter = () => (
+    <View style={styles.section}>
+      <Button title="Generate Invoice" onPress={handleGenerateInvoice} color="green" />
+    </View>
+  );
+
+  return (
+    <FlatList
+      style={styles.container}
+      data={invoiceItems}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.item}>
+          <Text style={styles.itemTitle}>{item.name} ({item.metal}) - {item.grossWeight}gm @ {item.purity}</Text>
+          <Text>Metal Value: ₹{item.metalValue.toFixed(2)} | MC: ₹{item.makingCharge.toFixed(2)}</Text>
+          <Text>Discount: ₹{item.discount.toFixed(2)}</Text>
+          <Text style={styles.itemTotal}>Item Total: ₹{item.finalTotal.toFixed(2)}</Text>
+        </View>
+      )}
+      ListHeaderComponent={renderHeader}
+      ListFooterComponent={renderFooter}
+      ListEmptyComponent={<Text style={{textAlign: 'center', padding: 10}}>No items added yet.</Text>}
+    />
   );
 };
 
