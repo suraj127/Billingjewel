@@ -1,34 +1,24 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import db from '../db';
+import { saveSettings } from '../db';
 
 const SetupScreen = ({ navigation }) => {
   const [storeName, setStoreName] = useState('');
   const [pin, setPin] = useState('');
 
-  const saveSettings = () => {
+  const handleSave = async () => {
     if (storeName.trim() === '' || pin.trim() === '') {
       Alert.alert('Error', 'Please enter both store name and PIN.');
       return;
     }
 
-    db.transaction(
-      tx => {
-        tx.executeSql('INSERT INTO settings (key, value) VALUES (?, ?), (?, ?)', [
-          'storeName',
-          storeName,
-          'pin',
-          pin,
-        ],
-        () => {
-            navigation.replace('Login');
-        },
-        (_, err) => {
-            console.log(err);
-            Alert.alert('Error', 'Failed to save settings.');
-        });
-      }
-    );
+    try {
+      await saveSettings(storeName, pin);
+      navigation.replace('Login');
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Error', 'Failed to save settings.');
+    }
   };
 
   return (
@@ -48,7 +38,7 @@ const SetupScreen = ({ navigation }) => {
         keyboardType="numeric"
         secureTextEntry
       />
-      <Button title="Save" onPress={saveSettings} />
+      <Button title="Save" onPress={handleSave} />
     </View>
   );
 };

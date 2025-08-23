@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { getPricesByDate, savePrices as dbSavePrices } from '../db';
+import { getPricesByDate, savePrices } from '../db';
 
 const PriceEntryScreen = ({ navigation }) => {
   const [gold24k, setGold24k] = useState('');
@@ -52,14 +52,14 @@ const PriceEntryScreen = ({ navigation }) => {
     }
   }, [gold24k, selectedKarat]);
 
-  const savePrices = async () => {
+  const handleSavePrices = async () => {
     if (gold24k.trim() === '' || silver.trim() === '') {
       Alert.alert('Error', 'Please enter both gold and silver prices.');
       return;
     }
     try {
       const today = getTodayDate();
-      await dbSavePrices(today, parseFloat(gold24k), parseFloat(silver));
+      await savePrices(today, parseFloat(gold24k), parseFloat(silver));
       Alert.alert('Success', 'Prices saved successfully for today.');
     } catch (err) {
       console.log(err);
@@ -109,7 +109,7 @@ const PriceEntryScreen = ({ navigation }) => {
         </Text>
       ) : null}
 
-      <Button title="Save Prices" onPress={savePrices} />
+      <Button title="Save Prices" onPress={handleSavePrices} />
 
       <View style={styles.separator} />
 
