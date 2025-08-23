@@ -29,8 +29,7 @@ export const generateInvoiceHtml = (invoiceDetails) => {
   <html>
     <head>
       <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; position: relative; }
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(0, 0, 0, 0.1); font-weight: bold; z-index: -1; pointer-events: none; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
         .header { text-align: center; margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 24px; }
         .details { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px; }
@@ -42,7 +41,6 @@ export const generateInvoiceHtml = (invoiceDetails) => {
       </style>
     </head>
     <body>
-      <div class="watermark">Rough Estimate Bill</div>
       <div class="header">
         <h1>${storeName}</h1>
         <p>Invoice</p>
