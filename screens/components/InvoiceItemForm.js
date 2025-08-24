@@ -28,48 +28,38 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
   const [makingChargeValue, setMakingChargeValue] = useState('');
   const [discountType, setDiscountType] = useState('Percent');
   const [discountValue, setDiscountValue] = useState('');
-  const [netWeight, setNetWeight] = useState(0);
-  const [metalValue, setMetalValue] = useState(0);
-  const [mcValue, setMcValue] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [finalTotal, setFinalTotal] = useState(0);
 
-  useEffect(() => {
-    const gw = parseFloat(grossWeight);
-    const purityPercent = getPurityPercentage(purity);
-    setNetWeight(isNaN(gw) ? 0 : gw * purityPercent);
-  }, [grossWeight, purity]);
+  // Perform calculations directly in the render body
+  const gw = parseFloat(grossWeight) || 0;
+  const purityPercent = getPurityPercentage(purity);
+  const netWeight = gw * purityPercent;
 
-  useEffect(() => {
-    if (dailyRates && netWeight > 0) {
-      const baseRate = selectedMetal === 'Gold' ? dailyRates.gold_24k_price : dailyRates.silver_price;
-      const itemRate = selectedMetal === 'Gold' ? baseRate : baseRate / getPurityPercentage('92.5%');
-      setMetalValue(netWeight * itemRate);
-    } else {
-      setMetalValue(0);
-    }
-  }, [netWeight, selectedMetal, dailyRates]);
+  let metalValue = 0;
+  if (dailyRates && netWeight > 0) {
+    const baseRate = selectedMetal === 'Gold' ? dailyRates.gold_24k_price : dailyRates.silver_price;
+    const itemRate = selectedMetal === 'Gold' ? baseRate : baseRate / getPurityPercentage('92.5%');
+    metalValue = netWeight * itemRate;
+  }
 
-  useEffect(() => {
-    const mcInput = parseFloat(makingChargeValue);
-    if (isNaN(mcInput)) { setMcValue(0); return; }
-    if (makingChargeBasis === 'Percent') {
-      setMcValue(metalValue * (mcInput / 100));
-    } else if (makingChargeBasis === 'PerGram') {
-      const gw = parseFloat(grossWeight) || 0;
-      setMcValue(gw * mcInput);
-    } else { setMcValue(mcInput); }
-  }, [makingChargeBasis, makingChargeValue, metalValue, grossWeight]);
+  const mcInput = parseFloat(makingChargeValue) || 0;
+  let mcValue = 0;
+  if (makingChargeBasis === 'Percent') {
+    mcValue = metalValue * (mcInput / 100);
+  } else if (makingChargeBasis === 'PerGram') {
+    mcValue = gw * mcInput;
+  } else {
+    mcValue = mcInput;
+  }
 
-  useEffect(() => { setTotal(metalValue + mcValue); }, [metalValue, mcValue]);
+  const total = metalValue + mcValue;
 
-  useEffect(() => {
-    const discountInput = parseFloat(discountValue);
-    if (isNaN(discountInput)) { setFinalTotal(total); return; }
-    if (discountType === 'Percent') {
-      setFinalTotal(total - total * (discountInput / 100));
-    } else { setFinalTotal(total - discountInput); }
-  }, [total, discountType, discountValue]);
+  const discountInput = parseFloat(discountValue) || 0;
+  let finalTotal = total;
+  if (discountType === 'Percent') {
+    finalTotal = total - total * (discountInput / 100);
+  } else {
+    finalTotal = total - discountInput;
+  }
 
   const handleAddItem = () => {
     if (!itemName.trim() || !grossWeight.trim()) {
@@ -78,7 +68,7 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
     }
     const newItem = {
       id: Date.now().toString(), metal: selectedMetal, name: itemName,
-      grossWeight: parseFloat(grossWeight), purity: purity, netWeight: netWeight,
+      grossWeight: gw, purity: purity, netWeight: netWeight,
       metalValue: metalValue, makingCharge: mcValue, total: total,
       discount: total - finalTotal, finalTotal: finalTotal,
     };
