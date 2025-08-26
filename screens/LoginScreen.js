@@ -31,12 +31,14 @@ const LoginScreen = ({ navigation }) => {
         keyboardType="numeric"
         secureTextEntry
         mode="outlined"
+        testID="pin-input"
       />
       <Button
         mode="contained"
         onPress={handleLogin}
         style={styles.button}
         icon="login"
+        testID="login-button"
       >
         Login
       </Button>

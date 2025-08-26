@@ -31,6 +31,7 @@ const SetupScreen = ({ navigation }) => {
         onChangeText={setStoreName}
         style={styles.input}
         mode="outlined"
+        testID="store-name-input"
       />
       <TextInput
         label="PIN"
@@ -40,6 +41,7 @@ const SetupScreen = ({ navigation }) => {
         keyboardType="numeric"
         secureTextEntry
         mode="outlined"
+        testID="pin-input"
       />
       <Button
         mode="contained"

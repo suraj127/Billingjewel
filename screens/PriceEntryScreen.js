@@ -78,6 +78,7 @@ const PriceEntryScreen = ({ navigation }) => {
             style={styles.input}
             keyboardType="numeric"
             mode="outlined"
+            testID="gold-rate-input"
           />
           <TextInput
             label="Silver Rate (per gm)"
@@ -86,6 +87,7 @@ const PriceEntryScreen = ({ navigation }) => {
             style={styles.input}
             keyboardType="numeric"
             mode="outlined"
+            testID="silver-rate-input"
           />
 
           <Text variant="titleMedium" style={styles.label}>Select Gold Karat</Text>
@@ -109,7 +111,7 @@ const PriceEntryScreen = ({ navigation }) => {
 
         </Card.Content>
         <Card.Actions>
-          <Button mode="contained" onPress={handleSavePrices} icon="content-save">Save Prices</Button>
+          <Button mode="contained" onPress={handleSavePrices} icon="content-save" testID="save-prices-button">Save Prices</Button>
         </Card.Actions>
       </Card>
 
@@ -119,6 +121,7 @@ const PriceEntryScreen = ({ navigation }) => {
         mode="elevated"
         onPress={() => navigation.navigate('CreateInvoice')}
         icon="plus-circle"
+        testID="create-new-invoice-button"
       >
         Create New Invoice
       </Button>

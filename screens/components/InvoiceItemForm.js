@@ -84,8 +84,8 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
         <View style={styles.pickerContainer}><Picker selectedValue={selectedMetal} onValueChange={(v) => setSelectedMetal(v)}>
           <Picker.Item label="Gold" value="Gold" /><Picker.Item label="Silver" value="Silver" />
         </Picker></View>
-        <TextInput label="Item Name (e.g., Ring, Chain)" value={itemName} onChangeText={setItemName} mode="outlined" style={styles.input} />
-        <TextInput label="Gross Weight (gm)" value={grossWeight} onChangeText={setGrossWeight} keyboardType="numeric" mode="outlined" style={styles.input} />
+        <TextInput label="Item Name (e.g., Ring, Chain)" value={itemName} onChangeText={setItemName} mode="outlined" style={styles.input} testID="item-name-input" />
+        <TextInput label="Gross Weight (gm)" value={grossWeight} onChangeText={setGrossWeight} keyboardType="numeric" mode="outlined" style={styles.input} testID="gross-weight-input" />
         <View style={styles.pickerContainer}><Picker selectedValue={purity} onValueChange={(v) => setPurity(v)}>
           <Picker.Item label="24K" value="24K" /><Picker.Item label="22K" value="22K" />
           <Picker.Item label="18K" value="18K" /><Picker.Item label="14K" value="14K" />
@@ -113,7 +113,7 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
         <Text style={styles.finalTotalText}>Final Total: ₹{finalTotal.toFixed(2)}</Text>
       </Card.Content>
       <Card.Actions>
-        <Button mode="contained" onPress={handleAddItem} icon="plus-circle">Add Item</Button>
+        <Button mode="contained" onPress={handleAddItem} icon="plus-circle" testID="add-item-button">Add Item</Button>
       </Card.Actions>
     </Card>
   );
