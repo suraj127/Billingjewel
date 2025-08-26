@@ -1,7 +1,6 @@
 import * as Print from 'expo-print';
-import { shareAsync } from 'expo-sharing';
 
-export const generateInvoicePdf = async (invoiceDetails) => {
+export const getInvoiceHtml = (invoiceDetails) => {
   const {
     invoiceNumber,
     date,
@@ -13,7 +12,6 @@ export const generateInvoicePdf = async (invoiceDetails) => {
     finalPayable,
   } = invoiceDetails;
 
-  // Map invoice items to HTML table rows
   const itemsHtml = items.map(item => `
     <tr>
       <td>${item.name}</td>
@@ -27,7 +25,7 @@ export const generateInvoicePdf = async (invoiceDetails) => {
     </tr>
   `).join('');
 
-  const html = `
+  return `
   <html>
     <head>
       <style>
@@ -126,10 +124,13 @@ export const generateInvoicePdf = async (invoiceDetails) => {
     </body>
   </html>
   `;
+};
 
+export const generateInvoicePdf = async (invoiceDetails) => {
+  const html = getInvoiceHtml(invoiceDetails);
   try {
     const { uri } = await Print.printToFileAsync({
-      html: html,
+      html,
       width: 595, // A5 width in points (210mm)
       height: 842, // A5 height in points (297mm)
     });

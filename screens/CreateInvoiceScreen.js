@@ -3,9 +3,10 @@ import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import {
   TextInput, Button, Text, Card,
 } from 'react-native-paper';
-import { getPricesByDate, saveInvoice, getSetting } from '../db';
-import { generateInvoicePdf } from '../utils/pdfGenerator';
+import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
+import { getPricesByDate, saveInvoice, getSetting } from '../db';
+import { generateInvoicePdf, getInvoiceHtml } from '../utils/pdfGenerator';
 import InvoiceItemForm from './components/InvoiceItemForm';
 
 const styles = StyleSheet.create({
@@ -17,7 +18,11 @@ const styles = StyleSheet.create({
   itemCard: { marginVertical: 5, },
   itemTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5, },
   itemTotal: { fontWeight: 'bold', color: 'navy', marginTop: 5, fontSize: 16, },
-  footerActions: { justifyContent: 'center', paddingVertical: 10, },
+  footerActions: {
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    flexDirection: 'row',
+  },
 });
 
 const InvoiceHeader = React.memo(({
@@ -86,40 +91,83 @@ const CreateInvoiceScreen = ({ navigation }) => {
     setInvoiceItems(prevItems => [...prevItems, newItem]);
   }, []);
 
-  const handleGenerateInvoice = async () => {
+  const prepareInvoiceData = async () => {
     if (invoiceItems.length === 0) {
-      Alert.alert('No Items', 'Please add at least one item.'); return;
+      Alert.alert('No Items', 'Please add at least one item.');
+      return null;
     }
     const subtotal = invoiceItems.reduce((acc, item) => acc + item.total, 0);
     const totalDiscount = invoiceItems.reduce((acc, item) => acc + item.discount, 0);
     const finalPayable = invoiceItems.reduce((acc, item) => acc + item.finalTotal, 0);
     const invoiceData = {
-      customerName: customerName, mobile: mobile,
-      date: new Date().toISOString().slice(0, 10), totalAmount: finalPayable,
+      customerName, mobile,
+      date: new Date().toISOString().slice(0, 10),
+      totalAmount: finalPayable,
     };
+
     try {
       const invoiceId = await saveInvoice(invoiceData, invoiceItems);
-      const pdfDetails = {
-        invoiceNumber: invoiceId, date: invoiceData.date, customerName: customerName,
-        items: invoiceItems, storeName: storeName, subtotal: subtotal,
-        totalDiscount: totalDiscount, finalPayable: finalPayable,
+      return {
+        invoiceNumber: invoiceId,
+        date: invoiceData.date,
+        customerName,
+        items: invoiceItems,
+        storeName,
+        subtotal,
+        totalDiscount,
+        finalPayable,
       };
-      const pdfUri = await generateInvoicePdf(pdfDetails);
-      if (pdfUri) {
-        await shareAsync(pdfUri, { dialogTitle: 'Share Invoice PDF' });
-      } else { Alert.alert('Error', 'Failed to create PDF file.'); }
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to save or generate invoice.');
+      Alert.alert('Error', 'Failed to save invoice.');
+      return null;
     }
   };
+
+  const handleShareInvoice = async () => {
+    const invoiceDetails = await prepareInvoiceData();
+    if (!invoiceDetails) return;
+
+    try {
+      const pdfUri = await generateInvoicePdf(invoiceDetails);
+      if (pdfUri) {
+        await shareAsync(pdfUri, { dialogTitle: 'Share Invoice PDF' });
+      } else {
+        Alert.alert('Error', 'Failed to create PDF file.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to share invoice.');
+    }
+  };
+
+  const handlePrintInvoice = async () => {
+    const invoiceDetails = await prepareInvoiceData();
+    if (!invoiceDetails) return;
+
+    try {
+      const html = getInvoiceHtml(invoiceDetails);
+      await Print.printAsync({
+        html,
+        width: 595,
+        height: 842,
+      });
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Failed to print invoice.');
+    }
+  };
+
 
   const renderFooter = () => (
     invoiceItems.length > 0 ? (
       <Card style={styles.card}>
         <Card.Actions style={styles.footerActions}>
-          <Button mode="contained" onPress={handleGenerateInvoice} icon="file-document">
-            Generate Invoice
+          <Button mode="contained" onPress={handleShareInvoice} icon="share-variant">
+            Share Invoice
+          </Button>
+          <Button mode="outlined" onPress={handlePrintInvoice} icon="printer">
+            Print Invoice
           </Button>
         </Card.Actions>
       </Card>
