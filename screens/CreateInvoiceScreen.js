@@ -34,7 +34,6 @@ const InvoiceHeader = React.memo(({
           onChangeText={setCustomerName}
           mode="outlined"
           style={styles.input}
-          testID="customer-name-input"
         />
         <TextInput
           label="Mobile (Optional)"
@@ -43,7 +42,6 @@ const InvoiceHeader = React.memo(({
           keyboardType="phone-pad"
           mode="outlined"
           style={styles.input}
-          testID="mobile-input"
         />
       </Card.Content>
     </Card>
@@ -120,7 +118,7 @@ const CreateInvoiceScreen = ({ navigation }) => {
     invoiceItems.length > 0 ? (
       <Card style={styles.card}>
         <Card.Actions style={styles.footerActions}>
-          <Button mode="contained" onPress={handleGenerateInvoice} icon="file-document" testID="generate-invoice-button">
+          <Button mode="contained" onPress={handleGenerateInvoice} icon="file-document">
             Generate Invoice
           </Button>
         </Card.Actions>
