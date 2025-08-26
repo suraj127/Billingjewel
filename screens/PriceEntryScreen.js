@@ -3,6 +3,7 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { TextInput, Button, Text, Card, Divider } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import { getPricesByDate, savePrices } from '../db';
+import { getTodayDateString } from '../utils/date';
 
 const PriceEntryScreen = ({ navigation }) => {
   const [gold24k, setGold24k] = useState('');
@@ -10,18 +11,10 @@ const PriceEntryScreen = ({ navigation }) => {
   const [selectedKarat, setSelectedKarat] = useState('24K');
   const [calculatedPrice, setCalculatedPrice] = useState('');
 
-  const getTodayDate = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
   useEffect(() => {
     const loadPrices = async () => {
       try {
-        const today = getTodayDate();
+        const today = getTodayDateString();
         const prices = await getPricesByDate(today);
         if (prices) {
           setGold24k(prices.gold_24k_price.toString());
@@ -56,7 +49,7 @@ const PriceEntryScreen = ({ navigation }) => {
       return;
     }
     try {
-      const today = getTodayDate();
+      const today = getTodayDateString();
       await savePrices(today, parseFloat(gold24k), parseFloat(silver));
       Alert.alert('Success', 'Prices saved successfully for today.');
     } catch (err) {
