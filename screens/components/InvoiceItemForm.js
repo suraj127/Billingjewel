@@ -34,11 +34,12 @@ const InvoiceItemForm = ({ dailyRates, onAddItem }) => {
       const purityPercent = getPurityPercentage(purity);
       const baseRate = selectedMetal === 'Gold' ? dailyRates.gold_24k_price : dailyRates.silver_price;
 
+      const adjustedRate = baseRate * purityPercent;
       const currentNetWeight = gw * purityPercent;
-      setNetWeight(currentNetWeight);
 
-      setMetalValue(currentNetWeight * baseRate);
-      setDisplayRate(baseRate * purityPercent);
+      setNetWeight(currentNetWeight);
+      setMetalValue(gw * adjustedRate);
+      setDisplayRate(adjustedRate);
     } else {
       setNetWeight(0);
       setMetalValue(0);
