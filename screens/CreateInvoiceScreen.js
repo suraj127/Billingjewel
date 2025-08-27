@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   TextInput, Button, Text, Card,
 } from 'react-native-paper';
@@ -61,26 +62,35 @@ const CreateInvoiceScreen = ({ navigation }) => {
   const [dailyRates, setDailyRates] = useState(null);
   const [storeName, setStoreName] = useState('');
 
-  // Fetch initial data
-  useEffect(() => {
-    const loadData = async () => {
-      const today = getTodayDateString();
-      try {
-        const rates = await getPricesByDate(today);
-        if (!rates) {
-          Alert.alert('Rates Not Set', 'Please set today\'s rates first.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
-        }
-        setDailyRates(rates);
+  // Fetch data every time the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        const today = getTodayDateString();
+        try {
+          const rates = await getPricesByDate(today);
+          if (!rates) {
+            // Prevent setting state if the component is unmounted
+            Alert.alert(
+              'Rates Not Set',
+              'Please set today\'s rates first.',
+              [{ text: 'OK', onPress: () => navigation.goBack() }]
+            );
+            return;
+          }
+          setDailyRates(rates);
 
-        const name = await getSetting('storeName');
-        setStoreName(name || 'My Store');
-      } catch (error) {
-        console.error(error);
-        Alert.alert('Error', 'Failed to load initial data.');
-      }
-    };
-    loadData();
-  }, [navigation]);
+          const name = await getSetting('storeName');
+          setStoreName(name || 'My Store');
+        } catch (error) {
+          console.error(error);
+          Alert.alert('Error', 'Failed to load initial data.');
+        }
+      };
+
+      loadData();
+    }, [navigation]) // Dependencies for useCallback
+  );
 
   // Callback for the memoized form component
   const handleAddItem = useCallback((newItem) => {
