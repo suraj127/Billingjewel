@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, ActivityIndicator } from 'react-native';
 import { PaperProvider, DefaultTheme } from 'react-native-paper';
 
-import { init, getSetting } from './db';
-import SetupScreen from './screens/SetupScreen';
 import LoginScreen from './screens/LoginScreen';
-import PriceEntryScreen from './screens/PriceEntryScreen';
-import CreateInvoiceScreen from './screens/CreateInvoiceScreen';
+import PaymentEntryScreen from './screens/PaymentEntryScreen';
+import ReceiptScreen from './screens/ReceiptScreen';
 
 // Define a custom theme
 const theme = {
@@ -23,44 +20,13 @@ const theme = {
 const Stack = createStackNavigator();
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [initialRoute, setInitialRoute] = useState('Setup');
-
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        await init();
-        const pin = await getSetting('pin');
-        if (pin) {
-          setInitialRoute('Login');
-        } else {
-          setInitialRoute('Setup');
-        }
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initialize();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
   return (
     <PaperProvider theme={theme}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName={initialRoute}>
-          <Stack.Screen name="Setup" component={SetupScreen} options={{ title: 'Setup' }} />
-          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
-          <Stack.Screen name="PriceEntry" component={PriceEntryScreen} options={{ title: 'Daily Prices' }} />
-          <Stack.Screen name="CreateInvoice" component={CreateInvoiceScreen} options={{ title: 'Create Invoice' }} />
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Your Details' }} />
+          <Stack.Screen name="PaymentEntry" component={PaymentEntryScreen} options={{ title: 'Payment Details' }} />
+          <Stack.Screen name="Receipt" component={ReceiptScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
